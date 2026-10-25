@@ -80,7 +80,7 @@ The visual design lives in a Claude Design canvas, not in this file: https://cla
 - **Learn the layout profile in code first.** Find ingredient runs (consecutive ingredient-like blocks, classes may alternate), then take the block class that most often sits just before them as the book's title class, and split the book at those titles. On the reference books this found 88–96% of recipes with no LLM (see `docs/reference-books.md`, `tools/phase0/find_recipes.py`).
 - Also count title + time/yield block + numbered steps as a recipe: some recipes have no ingredient list.
 - Use in-book contents pages: links from a chapter opener to anchors are recipe starts, even when `toc.ncx` lists only chapters.
-- Variations ("Tex-Mex Fondue" under a fondue) are sub-recipes listed under their parent.
+- Variations ("Tex-Mex Fondue" under a fondue) stay inside their parent recipe for now; the model puts them in its notes. Splitting them out is a later step.
 - Main photo: the image adjacent to the recipe whose caption equals its title. Skip step-by-step photos by default.
 - Flatten `<br>` and inline spans with spaces ("Prep Time 15 minutes").
 - If a chapter is still ambiguous, an optional cheap LLM pass returns titles and block ranges only, never the recipe text.
@@ -158,7 +158,9 @@ Both CLIs are installed on this Mac in `~/.local/bin` (Claude Code 2.1.310, Code
 
 ### Rendering the source page
 
-SwiftUI `WebPage` with a custom `URLSchemeHandler` that serves XHTML, CSS and images straight from the ePub zip. JavaScript off, network loads and navigation denied, so a book can't reach the network. Needs a spike: XHTML rendering this way is unverified.
+Browse: a `WKWebView` with a `WKURLSchemeHandler` (`epub-book://`) that serves XHTML, CSS and images straight from the ePub, opened at the recipe's anchor. JavaScript off, a content rule list blocks every non-book URL, non-book navigation is cancelled, and the data store is non-persistent, so a book can't reach the network. `WKWebView` instead of SwiftUI `WebPage` because it's the better-known API.
+
+Review: the recipe's own blocks drawn natively, so the source of a clicked line can be highlighted and scrolled to without JavaScript.
 
 ### Calibre library
 
@@ -192,7 +194,8 @@ Publishing or the App Store. Managing a book library (Calibre does that). PDF, M
 
 ## Phases
 
-- **Phase 0, spike.** Parse about 10 recipes from each of 3 different DRM-free cookbooks with Claude, against a hand-checked answer key, with the jphastings tool (main branch) as a baseline. Test the Mela handoff with throwaway recipes. Confirm a Finder-launched build can run `claude` with its Keychain login. Try the `WebPage` source view on a real ePub.
+- **Phase 0, spike (done in the cloud, Oct 2026).** Recipe finder: 99–100% recall on the three reference books. Live parses with Claude Code (Sonnet): 29 of 29 real recipes approved by the checker; the two flagged were intro sections marked "not sure". Still on the Mac: Mela handoff, Finder-launched Keychain login, `WKWebView` source view.
+  Original plan: Parse about 10 recipes from each of 3 different DRM-free cookbooks with Claude, against a hand-checked answer key, with the jphastings tool (main branch) as a baseline. Test the Mela handoff with throwaway recipes. Confirm a Finder-launched build can run `claude` with its Keychain login. Try the `WebPage` source view on a real ePub.
 - **Phase 1, MVP.** Calibre home screen and Library settings, open and check a book, find recipes, Outline view with tri-state selection, title search, parse with Claude, queue, review screen, `.melarecipes` export, per-book state.
 - **Phase 2.** Codex engine, inline edits, photo picker, full-text search, re-export, layout profiles, batching.
 - **Phase 3, delight.** Gallery polish, animations, Foundation Models for "is this a recipe?" checks, drag-out and Quick Look.
@@ -201,11 +204,10 @@ Publishing or the App Store. Managing a book library (Calibre does that). PDF, M
 
 - How a `.melarecipe` or `.melarecipes` file gets from the Mac into Mela on iOS (Files app, AirDrop, share sheet).
 - What Mela does with a repeated `id` (update, duplicate or skip), which fields are actually required, and image size limits. The developer takes questions by email via mela.recipes/help.
-- Whether `--safe-mode`, `--json-schema` and `--tools ""` work together (each was tested alone). Whether `--restricted` is a better fit and keeps the subscription login.
+- ~~Whether `--safe-mode`, `--json-schema` and `--tools ""` work together.~~ They do, together with `--max-turns 3`, `--no-session-persistence` and `--model`, on Claude Code 2.1.310 (tested Oct 2026).
 - Whether Codex `--output-schema` enforces strict rules on nested objects.
-- Whether `WebPage` with a custom scheme renders `application/xhtml+xml` pages with their CSS and images, and can highlight a passage with content JavaScript off.
-- What clicking a mixed `Toggle(_:sources:isOn:)` does by default.
-- How real cookbook ePubs are structured: recipe-level or chapter-only ToC, recipes per file, class names, `page-list`.
+- Whether `WKWebView` with the custom scheme renders the Calibre `.html` files with their CSS and images.
+- ~~How real cookbook ePubs are structured.~~ See `docs/reference-books.md`.
 - Foundation Models context size on this Mac (Apple sources say 4,096 or 8,192 tokens; read `contextSize` at runtime).
 
 ## Prior art
