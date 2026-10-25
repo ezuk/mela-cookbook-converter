@@ -16,7 +16,7 @@ var targets: [Target] = [
         ]
     ),
     .executableTarget(name: "importer-eval", dependencies: ["MelaCore"]),
-    .testTarget(name: "MelaCoreTests", dependencies: ["MelaCore"]),
+    .testTarget(name: "MelaCoreTests", dependencies: ["MelaCore"], resources: [.copy("Fixtures")]),
 ]
 
 #if os(macOS)
