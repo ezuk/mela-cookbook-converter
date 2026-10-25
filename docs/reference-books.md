@@ -33,3 +33,10 @@ Three real DRM-free cookbook ePubs, studied for the Phase 0 spike. The books the
 
 - `tools/phase0/dump_blocks.py`: prints the block structure (tag.class | text) of one or more spine files.
 - `tools/phase0/find_recipes.py`: the prototype finder. Prints ingredient runs, the learned title class, recipes found, and matches against the ToC or in-book contents.
+
+## Live parsing results (Claude Code 2.1.310, Sonnet, Oct 2026)
+
+- **Samples:** 10 recipes each from Weissman, Instant Pot and Cast Iron, picked to include multi-group lists, a recipe with no ingredient list, a boxed sub-recipe and a sourdough schedule. All 29 real recipes passed the checker; the two flagged items were intro sections the finder had already marked "not sure".
+- **A whole book:** all 130 candidates in Cook It in Cast Iron, 10 at a time. 129 passed. Audit of the 25 recipes whose step or ingredient counts differ from the finder's: in every case the difference was a technique box ("FLIPPING HASH BROWN PIE: 1 …") that the model correctly put in notes, or ingredient lines the finder's runs didn't count. No dropped or invented lines found.
+- **Non-recipes:** some essays the finder marks "not sure" ("Hack Your Skillet", "Conversions and Equivalents") also pass when parsed, because the model gives them a recipe shape. They stay unticked unless chosen, so this only matters if they're ticked by hand.
+- **Speed:** about 15 seconds per recipe; 10 at a time, a whole book takes a few minutes.
