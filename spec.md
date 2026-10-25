@@ -13,7 +13,7 @@ Mela file format: https://mela.recipes/fileformat/index.html
 | Minimum macOS | 26 (Tahoe). Gives SwiftUI `WebView`/`WebPage`, Liquid Glass in standard controls, and Foundation Models if wanted later. |
 | Books | One book at a time, no library. Open via File > Open, Open Recent, drag onto the window or Dock icon, or Open With in Finder. |
 | Coming back | Reopening the same ePub restores its state (ticks, parse results, edits, export history) from a per-book store keyed by the book's identifier and file hash. |
-| Engines | Claude Code first. Codex second, behind the same engine interface. One engine per parse run, chosen in Settings, with "Retry with the other engine" per recipe. |
+| Engines | Claude Code first. Codex second, behind the same engine interface. One engine and model per parse run, picked in the Parse sheet (defaults in Settings), with "Retry with the other engine" per recipe. Pass the model with `--model` (Claude) or `-m` (Codex). |
 | Wording | Keep the book's wording, units and language. No unit conversion, translation or rewriting. |
 | Review gate | Recipes where every field was found in the book go straight to Approved. Anything flagged waits for my OK. |
 | Export | One `.melarecipes` bundle per export, pending the Mela handoff test. |
@@ -42,7 +42,7 @@ The visual design lives in a Claude Design canvas, not in this file: https://cla
 3. **Browse and select, Outline view.** Three-column window: sidebar filters, recipe outline with tri-state chapter checkboxes, detail pane showing the source page. Bottom bar with "N recipes ticked" and Parse.
 4. **Browse and select, Gallery view.** Recipe cards grouped by chapter, using the book's photos, with a type-only card when there is no photo. Cmd-1 and Cmd-2 switch views; the choice is remembered per book.
 5. **Search.** Scopes (Titles, Ingredients, Everything), results filtered in place with chapter headers kept, "Tick all N" and "Untick all N".
-6. **Parse.** Confirm sheet (engine, count), then a queue with per-recipe states, cancel, retry, pause, and a paused-on-usage-limit state.
+6. **Parse.** Confirm sheet (engine, model, count; no cost estimate), then a queue with per-recipe states, cancel, retry, pause, and a paused-on-usage-limit state.
 7. **Review.** Source page on the left, Mela-style card on the right. Clicking a field highlights where it came from. Each field is Found in book, Worked out, or Missing. Inline edits are marked as mine. Keyboard: arrows or J/K to move, Cmd-Return to approve, Cmd-R to re-parse.
 8. **Export.** Sheet with options (chapter as category, book and page in the source field), then success with Show in Finder and an import tip.
 9. **Settings > Engines.** Which CLIs were found, version, login state, default engine, API-key billing warning.
