@@ -42,10 +42,10 @@ The visual design lives in a Claude Design canvas, not in this file: https://cla
 3. **Browse and select, Outline view.** Three-column window: sidebar filters, recipe outline with tri-state chapter checkboxes, detail pane showing the source page. Bottom bar with "N recipes ticked" and Parse.
 4. **Browse and select, Gallery view.** Recipe cards grouped by chapter, using the book's photos, with a type-only card when there is no photo. Cmd-1 and Cmd-2 switch views; the choice is remembered per book.
 5. **Search.** Scopes (Titles, Ingredients, Everything), results filtered in place with chapter headers kept, "Tick all N" and "Untick all N".
-6. **Parse.** Confirm sheet (engine, model, count; no cost estimate), then a queue with per-recipe states, cancel, retry, pause, and a paused-on-usage-limit state.
+6. **Parse.** Confirm sheet (engine, model, count; no cost estimate), then a queue (no usage or cost display) with per-recipe states, cancel, retry, pause, and a paused-on-usage-limit state.
 7. **Review.** Source page on the left, Mela-style card on the right. Clicking a field highlights where it came from. Each field is Found in book, Worked out, or Missing. Inline edits are marked as mine. Keyboard: arrows or J/K to move, Cmd-Return to approve, Cmd-R to re-parse.
 8. **Export.** Sheet with options (chapter as category, book and page in the source field), then success with Show in Finder and an import tip.
-9. **Settings > Engines.** Which CLIs were found, version, login state, default engine, API-key billing warning.
+9. **Settings > Engines.** Which CLIs were found, version, login state, default engine, default model per engine, API-key billing warning. No spending cap.
 
 ### Behavior the mocks must show
 
@@ -127,7 +127,7 @@ Both CLIs are installed on this Mac in `~/.local/bin` (Claude Code 2.1.310, Code
 
 **Claude Code**
 
-- Run: `claude -p --output-format json --json-schema '<schema>' --tools "" --no-session-persistence --max-turns 3 --max-budget-usd <cap>`, plus `--safe-mode`. For live progress, use `--output-format stream-json --verbose --include-partial-messages`.
+- Run: `claude -p --output-format json --json-schema '<schema>' --tools "" --no-session-persistence --max-turns 3 --model <model>`, plus `--safe-mode`. For live progress, use `--output-format stream-json --verbose --include-partial-messages`.
 - Read the answer from `structured_output`, not `result`. Treat a non-zero exit, `is_error: true`, any `error_*` subtype, or success without `structured_output` as failure. A logged-out run still reports subtype `success`.
 - Never use `--bare`: it skips the Keychain login. The docs say bare will become the default for `-p` in a future release, so detect a broken login (init event's `apiKeySource`, "Not logged in") and pause cleanly.
 - Remove `ANTHROPIC_API_KEY` and `ANTHROPIC_AUTH_TOKEN` from the child environment, or runs silently bill the API key instead of the subscription.
@@ -146,7 +146,7 @@ Both CLIs are installed on this Mac in `~/.local/bin` (Claude Code 2.1.310, Code
 
 - Finder-launched apps get `PATH=/usr/bin:/bin:/usr/sbin:/sbin`. Look for the binaries at absolute paths (`~/.local/bin`, `/opt/homebrew/bin`, `/usr/local/bin`) and give each child an explicit PATH.
 - Default 2 parses at a time (no documented limit). Pause the queue on usage limits instead of failing the batch. Claude emits `system/api_retry` events with an error category (`rate_limit`, `authentication_failed`, `billing_error`, `overloaded`).
-- Show costs as estimates: `total_cost_usd` and Codex token counts are not billing data.
+- No cost display in the UI. `total_cost_usd` and Codex token counts go to the log only.
 - Log both CLI versions at launch, skip unknown event types, and rerun a small live test set when a version changes.
 
 ### Rendering the source page
