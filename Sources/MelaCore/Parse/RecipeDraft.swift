@@ -26,11 +26,13 @@ public struct RecipeDraft: Codable, Sendable, Equatable {
     public struct IngredientGroup: Codable, Sendable, Equatable {
         public var name: String?
         public var items: [Line]
+        public init(name: String?, items: [Line]) { self.name = name; self.items = items }
     }
 
     public struct StepGroup: Codable, Sendable, Equatable {
         public var name: String?
         public var steps: [Line]
+        public init(name: String?, steps: [Line]) { self.name = name; self.steps = steps }
     }
 
     public enum NoteKind: String, Codable, Sendable, CaseIterable {
@@ -41,11 +43,13 @@ public struct RecipeDraft: Codable, Sendable, Equatable {
         public var kind: NoteKind
         public var text: String
         public var source: [String]
+        public init(kind: NoteKind, text: String, source: [String]) { self.kind = kind; self.text = text; self.source = source }
     }
 
     public struct CrossReference: Codable, Sendable, Equatable {
         public var text: String
         public var page: String?
+        public init(text: String, page: String?) { self.text = text; self.page = page }
     }
 
     public var allIngredients: [Line] { ingredientGroups.flatMap(\.items) }

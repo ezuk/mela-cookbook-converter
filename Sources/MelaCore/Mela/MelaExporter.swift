@@ -136,8 +136,8 @@ public enum MelaExporter {
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    /// "Cook It in Cast Iron (Cook's Country)" → "Cook It in Cast Iron"; drops marketing after a period or colon is kept.
-    static func shortTitle(_ t: String) -> String {
+    /// "Cook It in Cast Iron (Cook's Country)" → "Cook It in Cast Iron". Drops series names in parentheses and marketing after a period.
+    public static func shortTitle(_ t: String) -> String {
         var s = t.replacingOccurrences(of: #"\s*\([^)]*\)\s*$"#, with: "", options: .regularExpression)
         s = s.replacingOccurrences(of: #"\.\s*#?\d+\s+.*$"#, with: "", options: .regularExpression)
         return s.trimmingCharacters(in: .whitespaces)

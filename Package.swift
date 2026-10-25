@@ -22,7 +22,12 @@ var targets: [Target] = [
 #if os(macOS)
 // The app only builds on macOS 26 with SwiftUI and WebKit.
 products.append(.executable(name: "MelaImporter", targets: ["MelaImporter"]))
-targets.append(.executableTarget(name: "MelaImporter", dependencies: ["MelaCore"], path: "App/MelaImporter"))
+targets.append(.executableTarget(
+    name: "MelaImporter",
+    dependencies: ["MelaCore"],
+    path: "App/MelaImporter",
+    swiftSettings: [.swiftLanguageMode(.v5)]
+))
 #endif
 
 let package = Package(
