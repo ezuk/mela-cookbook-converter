@@ -19,7 +19,7 @@ struct RecipeOutline: View {
                     }
                 } header: {
                     let ids = group.recipes.map(\.id)
-                    let ticked = ids.filter(book.isTicked).count
+                    let ticked = ids.filter { book.isTicked($0) }.count
                     HStack(spacing: 8) {
                         TriStateCheckbox(state: book.triState(ids), label: "\(group.name), \(ticked) of \(ids.count) ticked") {
                             book.toggleGroup(ids)
@@ -117,11 +117,11 @@ struct RecipeGallery: View {
                 ForEach(book.chapters) { group in
                     let ids = group.recipes.map(\.id)
                     HStack(spacing: 8) {
-                        TriStateCheckbox(state: book.triState(ids), label: "\(group.name), \(ids.filter(book.isTicked).count) of \(ids.count) ticked") {
+                        TriStateCheckbox(state: book.triState(ids), label: "\(group.name), \(ids.filter { book.isTicked($0) }.count) of \(ids.count) ticked") {
                             book.toggleGroup(ids)
                         }
                         Text(group.name).font(.system(.title2, design: .serif))
-                        Text("\(ids.filter(book.isTicked).count) of \(ids.count) ticked").font(.caption).foregroundStyle(.secondary)
+                        Text("\(ids.filter { book.isTicked($0) }.count) of \(ids.count) ticked").font(.caption).foregroundStyle(.secondary)
                     }
                     LazyVGrid(columns: columns, spacing: 14) {
                         ForEach(group.recipes) { r in
@@ -176,7 +176,7 @@ struct GalleryCard: View {
         }
         .background(Color(nsColor: .controlBackgroundColor))
         .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(selected ? Color.tomato : Color.secondary.opacity(0.2), lineWidth: selected ? 2 : 1))
+        .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(selected ? Color.tomato : Color.secondary.opacity(0.2), lineWidth: selected ? 2 : 1) }
         .contentShape(Rectangle())
         .onTapGesture { book.highlighted = [recipe.id] }
         .gentleAnimation(value: book.isTicked(recipe.id))

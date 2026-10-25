@@ -143,7 +143,7 @@ struct EngineRow: View {
     var body: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(kind.displayName).fontWeight(.semibold) + Text(info?.version.map { "  \($0)" } ?? "").foregroundColor(.secondary)
+                Text("\(Text(kind.displayName).fontWeight(.semibold))\(Text(info?.version.map { "  \($0)" } ?? "").foregroundStyle(.secondary))")
                 Text(info.map { ($0.executable.path as NSString).abbreviatingWithTildeInPath } ?? (checked ? "Not found in ~/.local/bin, /opt/homebrew/bin or /usr/local/bin" : "Looking…"))
                     .font(.caption).foregroundStyle(.secondary)
             }

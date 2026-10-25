@@ -298,7 +298,11 @@ final class BookModel {
     func startParsing(_ recipes: [RecipeCandidate], engine kind: EngineKind, model: String?, concurrency: Int) throws {
         let engine = try EngineFactory.make(kind)
         if queue == nil || queueEngine != kind || queueModel != model {
-            queue?.cancelAllDetached()
+            if let old = queue {
+                old.cancelAllDetached()
+                // The old queue's cancel events are ignored below, so clear its rows here.
+                queueState = queueState.filter { $0.value != .waiting && $0.value != .parsing }
+            }
             queueGeneration += 1
             let generation = queueGeneration
             queue = ParseQueue(engine: engine, model: model?.isEmpty == true ? nil : model, concurrency: concurrency, cache: store.cache) { [weak self] event in

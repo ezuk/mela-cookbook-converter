@@ -21,7 +21,7 @@ struct SourcePane: View {
                     if let used = book.recipe(usedID) {
                         HStack {
                             Image(systemName: "link").foregroundStyle(Color.tomato)
-                            Text("Uses **\(used.title)**") + Text(used.page.map { "  (page \($0))" } ?? "").foregroundColor(.secondary)
+                            Text("Uses **\(used.title)**\(Text(used.page.map { "  (page \($0))" } ?? "").foregroundStyle(.secondary))")
                             Spacer()
                             if book.isTicked(usedID) {
                                 Text("Ticked").font(.caption.weight(.semibold)).foregroundStyle(Color.approvedGreen)
@@ -76,7 +76,6 @@ struct BookPageView: NSViewRepresentable {
         config.websiteDataStore = .nonPersistent()
         let view = WKWebView(frame: .zero, configuration: config)
         view.navigationDelegate = context.coordinator
-        view.setValue(false, forKey: "drawsBackground")
         // Block everything that isn't the book itself.
         let rules = #"[{"trigger":{"url-filter":".*"},"action":{"type":"block"}},{"trigger":{"url-filter":"^epub-book:"},"action":{"type":"ignore-previous-rules"}}]"#
         WKContentRuleListStore.default().compileContentRuleList(forIdentifier: "book-only", encodedContentRuleList: rules) { list, _ in

@@ -13,6 +13,11 @@ struct ParseSheet: View {
     @State private var checked = false
     @State private var error: String?
 
+    private func engineLabel(_ k: EngineKind) -> String {
+        if let v = info[k]?.version { return "\(k.displayName)  \(v)" }
+        return checked && info[k] == nil ? "\(k.displayName)  (not installed)" : k.displayName
+    }
+
     var body: some View {
         let recipes = book.toParse
         let alreadyParsed = book.tickedRecipes.count - recipes.count
@@ -27,7 +32,7 @@ struct ParseSheet: View {
             Form {
                 Picker("Engine", selection: $engine) {
                     ForEach(EngineKind.allCases) { k in
-                        Text(k.displayName + (info[k]?.version.map { "  \($0)" } ?? (checked && info[k] == nil ? "  (not installed)" : ""))).tag(k)
+                        Text(engineLabel(k)).tag(k)
                     }
                 }
                 LabeledContent("Account") {
@@ -206,7 +211,7 @@ struct PausedBanner: View {
 extension BookModel {
     /// Moves recipes still waiting to the other engine.
     func switchRemaining(to engine: EngineKind) {
-        let waiting = found.recipes.filter { rowState($0.id) == .waiting }
+        let waiting = found.recipes.filter { [.waiting, .parsing].contains(rowState($0.id)) }
         queuePaused = nil
         try? startParsing(waiting, engine: engine, model: AppSettings.shared.model(for: engine), concurrency: AppSettings.shared.concurrency)
     }

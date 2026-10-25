@@ -9,6 +9,7 @@ struct ReviewView: View {
     @State private var currentID: String
     @State private var highlightedBlocks: Set<Int> = []
     @State private var editing = false
+    @FocusState private var keyFocus: Bool
 
     init(book: BookModel, startID: String) {
         self.book = book
@@ -44,7 +45,11 @@ struct ReviewView: View {
                 ContentUnavailableView("Nothing to review yet", systemImage: "checklist")
             }
         }
-        .focusedSceneValue(\.reviewActions, ReviewActions(approve: approve, reparse: { book.reparse(currentID) }))
+        .focusable()
+        .focusEffectDisabled()
+        .focused($keyFocus)
+        .onAppear { keyFocus = true }
+        .focusedSceneValue(\.reviewActions, ReviewActions(approve: { approve() }, reparse: { book.reparse(currentID) }))
         .onKeyPress(characters: ["j", "k"]) { press in
             guard !editing else { return .ignored }
             move(press.characters == "j" ? 1 : -1)

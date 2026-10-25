@@ -6,6 +6,12 @@ public struct ExportRecord: Codable, Sendable, Equatable {
     public var date: Date
     public var file: String
     public var recipeIDs: [String]
+
+    public init(date: Date, file: String, recipeIDs: [String]) {
+        self.date = date
+        self.file = file
+        self.recipeIDs = recipeIDs
+    }
 }
 
 /// Everything remembered about one book between launches.

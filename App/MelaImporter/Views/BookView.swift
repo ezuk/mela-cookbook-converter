@@ -92,6 +92,8 @@ struct BookView: View {
         }
         .onAppear { book.undoManager = undoManager }
         .onChange(of: book.queuePaused) { _, paused in if paused != nil { showQueue = true } }
+        // A sheet can't open over the queue popover: close it first.
+        .onChange(of: review) { _, r in if r != nil { showQueue = false } }
     }
 }
 
@@ -102,7 +104,7 @@ struct BookSidebar: View {
         List(selection: Binding(get: { book.sidebarFilter }, set: { book.sidebarFilter = $0 ?? .all })) {
             Section {
                 HStack(spacing: 10) {
-                    BookCover(title: book.title, author: book.author, image: book.package.coverImagePath.flatMap(book.image))
+                    BookCover(title: book.title, author: book.author, image: book.package.coverImagePath.flatMap { book.image($0) })
                         .frame(width: 40)
                     VStack(alignment: .leading) {
                         Text(book.title).font(.headline).lineLimit(2)
