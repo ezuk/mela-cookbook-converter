@@ -33,7 +33,7 @@ Mela file format: https://mela.recipes/fileformat/index.html
 
 The app is fully native macOS and should feel lightweight, delightful and visual. Cooking is fun!
 
-The visual design lives in a Claude Design canvas (the Design artifact type), not in this file. This section lists the screens and the behavior they must show.
+The visual design lives in a Claude Design canvas, not in this file: https://claude.ai/artifact/4yBVUR6QezqcJ4DiNLsTmq This section lists the screens and the behavior they must show.
 
 ### Screens
 
