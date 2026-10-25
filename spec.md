@@ -16,7 +16,7 @@ Mela file format: https://mela.recipes/fileformat/index.html
 | Engines | Claude Code first. Codex second, behind the same engine interface. One engine and model per parse run, picked in the Parse sheet (defaults in Settings), with "Retry with the other engine" per recipe. Pass the model with `--model` (Claude) or `-m` (Codex). |
 | Wording | Keep the book's wording, units and language. No unit conversion, translation or rewriting. |
 | Review gate | Recipes where every field was found in the book go straight to Approved. Anything flagged waits for my OK. |
-| Export | One `.melarecipes` bundle per export, pending the Mela handoff test. |
+| Export | One `.melarecipes` bundle per export, pending the Mela handoff test. Mela is used on iOS only, so the file is saved to a folder (for example iCloud Drive) and imported on the phone. |
 | Order of work | Parsing spike on real books before the review screen design is final. Everything else can be designed now. |
 
 ## How it works
@@ -38,14 +38,14 @@ The visual design lives in a Claude Design canvas, not in this file: https://cla
 ### Screens
 
 1. **Open a book.** Drop zone, Open button, Open Recent.
-2. **Book can't be used.** DRM-locked, looks scanned, fixed layout, no recipes found (with a "pick by hand" path).
+2. **Open errors, in context, not a screen of their own.** DRM-locked and scanned books get an alert on the Open window. Fixed layout gets a dismissable banner above the recipe list. No recipes found is the list's empty state, with marking by hand from the source pane and an AI recipe finder.
 3. **Browse and select, Outline view.** Three-column window: sidebar filters, recipe outline with tri-state chapter checkboxes, detail pane showing the source page. Bottom bar with "N recipes ticked" and Parse.
 4. **Browse and select, Gallery view.** Recipe cards grouped by chapter, using the book's photos, with a type-only card when there is no photo. Cmd-1 and Cmd-2 switch views; the choice is remembered per book.
 5. **Search.** Scopes (Titles, Ingredients, Everything), results filtered in place with chapter headers kept, "Tick all N" and "Untick all N".
 6. **Parse.** Confirm sheet (engine, model, count; no cost estimate), then a queue (no usage or cost display) with per-recipe states, cancel, retry, pause, and a paused-on-usage-limit state.
 7. **Review.** Source page on the left, Mela-style card on the right. Clicking a field highlights where it came from. Each field is Found in book, Worked out, or Missing. Inline edits are marked as mine. Keyboard: arrows or J/K to move, Cmd-Return to approve, Cmd-R to re-parse.
-8. **Export.** Sheet with options (chapter as category, book and page in the source field), then success with Show in Finder and an import tip.
-9. **Settings > Engines.** Which CLIs were found, version, login state, default engine, default model per engine, API-key billing warning. No spending cap.
+8. **Export.** Sheet with options (chapter as category, book and page in the source field) and a Save to folder menu that remembers the last folder, then success with Show in Finder and a tip for importing on the iPhone. No Open in Mela: there is no Mac Mela.
+9. **Settings.** One pane, no tabs: which CLIs were found, version, login state, default engine, default model per engine, API-key billing warning. No spending cap.
 
 ### Behavior the mocks must show
 
@@ -95,7 +95,7 @@ After every parse, without an LLM:
 3. Coverage: ingredient-like and method-like source blocks all ended up somewhere in the output.
 4. Structure: a title, at least one ingredient, at least one step.
 
-Any failure sets the recipe to Needs review and the review screen highlights the exact lines. One automatic retry feeds the failures back to the model.
+When a cited line matches its source except for a number, the app uses the book's text and marks the line "Fixed from book"; that alone doesn't need review. Any other failure (a missing line, a line with no source) sets the recipe to Needs review and the review screen highlights the exact lines. One automatic retry feeds the failures back to the model.
 
 ### Recipe states
 
@@ -145,7 +145,7 @@ Both CLIs are installed on this Mac in `~/.local/bin` (Claude Code 2.1.310, Code
 **Both**
 
 - Finder-launched apps get `PATH=/usr/bin:/bin:/usr/sbin:/sbin`. Look for the binaries at absolute paths (`~/.local/bin`, `/opt/homebrew/bin`, `/usr/local/bin`) and give each child an explicit PATH.
-- Default 2 parses at a time (no documented limit). Pause the queue on usage limits instead of failing the batch. Claude emits `system/api_retry` events with an error category (`rate_limit`, `authentication_failed`, `billing_error`, `overloaded`).
+- Default 10 parses at a time, adjustable. Each recipe is its own CLI process; the limit caps memory use and how fast a usage limit is reached (no documented limit). Pause the queue on usage limits instead of failing the batch. Claude emits `system/api_retry` events with an error category (`rate_limit`, `authentication_failed`, `billing_error`, `overloaded`).
 - No cost display in the UI. `total_cost_usd` and Codex token counts go to the log only.
 - Log both CLI versions at launch, skip unknown event types, and rerun a small live test set when a version changes.
 
@@ -171,7 +171,7 @@ Publishing or the App Store. A library of books. PDF, MOBI, Kindle. DRM books. S
 2. On each test book, the found-recipe list matches a hand-made answer key (target set after the spike).
 3. Every exported ingredient line can be found in the source, or the recipe was flagged.
 4. A recipe with no stated times exports with empty time fields.
-5. The exported `.melarecipes` opens in Mela on the Mac, and sampled recipes show the right title, yield, grouped ingredients, steps and main photo.
+5. The exported `.melarecipes` imports into Mela on the iPhone, and sampled recipes show the right title, yield, grouped ingredients, steps and main photo.
 6. Quitting mid-batch and reopening the book keeps finished results and doesn't re-send them.
 7. With no CLI installed, the app still opens a book and allows selection; Parse explains the setup.
 8. A book with LCP or non-font encryption is refused; a book with only font obfuscation opens.
@@ -185,7 +185,7 @@ Publishing or the App Store. A library of books. PDF, MOBI, Kindle. DRM books. S
 
 ## Open questions (need a hands-on test)
 
-- How a `.melarecipe` or `.melarecipes` file is opened in Mela on the Mac (double-click, Open With, drag, menu).
+- How a `.melarecipe` or `.melarecipes` file gets from the Mac into Mela on iOS (Files app, AirDrop, share sheet).
 - What Mela does with a repeated `id` (update, duplicate or skip), which fields are actually required, and image size limits. The developer takes questions by email via mela.recipes/help.
 - Whether `--safe-mode`, `--json-schema` and `--tools ""` work together (each was tested alone). Whether `--restricted` is a better fit and keeps the subscription login.
 - Whether Codex `--output-schema` enforces strict rules on nested objects.
