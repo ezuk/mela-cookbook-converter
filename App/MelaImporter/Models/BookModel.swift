@@ -130,7 +130,7 @@ final class BookModel {
         state.lastOpened = Date()
         let ids = Set(found.recipes.map(\.id))
         state.ticked = state.ticked.intersection(ids)
-        if let first = found.recipes.first { highlighted = [first.id] }
+        if let first = visibleRecipes.first ?? found.recipes.first { highlighted = [first.id] }
         updateRecent()
     }
 

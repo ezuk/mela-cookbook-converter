@@ -102,6 +102,9 @@ struct BookPageView: NSViewRepresentable {
         config.setURLSchemeHandler(context.coordinator, forURLScheme: Self.scheme)
         config.defaultWebpagePreferences.allowsContentJavaScript = false
         config.websiteDataStore = .nonPersistent()
+        // Side margins so hanging-indent lines aren't cut off at the left edge.
+        config.userContentController.addUserScript(WKUserScript(
+            source: "document.body.style.padding = '0 20px'", injectionTime: .atDocumentEnd, forMainFrameOnly: true))
         let view = WKWebView(frame: .zero, configuration: config)
         view.navigationDelegate = context.coordinator
         // Block everything that isn't the book itself.
