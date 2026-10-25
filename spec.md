@@ -11,7 +11,8 @@ Mela file format: https://mela.recipes/fileformat/index.html
 | Audience | Personal tool. Not published, no App Store. |
 | Distribution | Built and run locally, signed with my own developer certificate, App Sandbox off so the app can launch the CLIs with my normal login and settings. |
 | Minimum macOS | 26 (Tahoe). Gives SwiftUI `WebView`/`WebPage`, Liquid Glass in standard controls, and Foundation Models if wanted later. |
-| Books | One book at a time, no library. Open via File > Open, Open Recent, drag onto the window or Dock icon, or Open With in Finder. |
+| Books | The home screen lists the cookbooks in my Calibre library, picked by tags and title words set in Settings. All are assumed to be DRM-free ePubs. One book is worked on at a time. Books outside Calibre still open via File > Open, drag onto the window or Dock icon, or Open With in Finder. |
+| Processed | A book is Processed once its Mela export exists next to its ePub in the Calibre folder. The home screen filters All, To be processed, Processed. |
 | Coming back | Reopening the same ePub restores its state (ticks, parse results, edits, export history) from a per-book store keyed by the book's identifier and file hash. |
 | Engines | Claude Code first. Codex second, behind the same engine interface. One engine and model per parse run, picked in the Parse sheet (defaults in Settings), with "Retry with the other engine" per recipe. Pass the model with `--model` (Claude) or `-m` (Codex). |
 | Wording | Keep the book's wording, units and language. No unit conversion, translation or rewriting. |
@@ -37,7 +38,7 @@ The visual design lives in a Claude Design canvas, not in this file: https://cla
 
 ### Screens
 
-1. **Open a book.** Drop zone, Open button, Open Recent.
+1. **Home: cookbooks from Calibre.** Cover grid with title and status (To be processed, Started with N ticked, Processed), filter All / To be processed / Processed, title search, Open ePub… for books outside Calibre.
 2. **Open errors, in context, not a screen of their own.** DRM-locked and scanned books get an alert on the Open window. Fixed layout gets a dismissable banner above the recipe list. No recipes found is the list's empty state, with marking by hand from the source pane and an AI recipe finder.
 3. **Browse and select, Outline view.** Three-column window: sidebar filters, recipe outline with tri-state chapter checkboxes, detail pane showing the source page. Bottom bar with "N recipes ticked" and Parse.
 4. **Browse and select, Gallery view.** Recipe cards grouped by chapter, using the book's photos, with a type-only card when there is no photo. Cmd-1 and Cmd-2 switch views; the choice is remembered per book.
@@ -45,7 +46,7 @@ The visual design lives in a Claude Design canvas, not in this file: https://cla
 6. **Parse.** Confirm sheet (engine, model, count; no cost estimate), then a queue (no usage or cost display) with per-recipe states, cancel, retry, pause, and a paused-on-usage-limit state.
 7. **Review.** Source page on the left, Mela-style card on the right. Clicking a field highlights where it came from. Each field is Found in book, Worked out, or Missing. Inline edits are marked as mine. Keyboard: arrows or J/K to move, Cmd-Return to approve, Cmd-R to re-parse.
 8. **Export.** Sheet with options (chapter as category, book and page in the source field) and a Save to folder menu that remembers the last folder, then success with Show in Finder and a tip for importing on the iPhone. No Open in Mela: there is no Mac Mela.
-9. **Settings.** One pane, no tabs: which CLIs were found, version, login state, default engine, default model per engine, API-key billing warning. No spending cap.
+9. **Settings.** Two tabs. **Library:** Calibre library folder, tags and title words that mark a cookbook (any match), live count of matching books, save exports next to the ePub (on by default). **Engines:** which CLIs were found, version, login state, default engine, default model per engine, API-key billing warning. No spending cap.
 
 ### Behavior the mocks must show
 
@@ -66,7 +67,7 @@ The visual design lives in a Claude Design canvas, not in this file: https://cla
 
 ### Book checks on open
 
-- **DRM.** Read `META-INF/encryption.xml`. Accept the book if the file is absent or every `EncryptionMethod` uses `http://www.idpf.org/2008/embedding` (IDPF font obfuscation, which the spec says is not encryption). Reject if any other algorithm appears, or if `META-INF/license.lcpl` (Readium LCP) or `META-INF/rights.xml` (reserved for DRM) exists. Test against my own DRM-free files, since other font-obfuscation methods or empty `encryption.xml` files may exist.
+- **DRM.** Read `META-INF/encryption.xml`. Accept the book if the file is absent or every `EncryptionMethod` uses `http://www.idpf.org/2008/embedding` (IDPF font obfuscation, which the spec says is not encryption). Also accept `http://ns.adobe.com/pdf/enc#RC` (Adobe font obfuscation) when every encrypted URI is a font: Calibre writes it, and two of the three reference books use it. Reject if any other algorithm appears, or a non-font file is encrypted, or if `META-INF/license.lcpl` (Readium LCP) or `META-INF/rights.xml` (reserved for DRM) exists. Test against my own DRM-free files, since other font-obfuscation methods or empty `encryption.xml` files may exist.
 - **Scanned.** Count visible text per spine document. Almost no text means a scan: refuse in v1.
 - **Fixed layout.** `rendition:layout` is `pre-paginated`: one page per file, so recipe ranges may be odd. Warn, don't block.
 
@@ -76,7 +77,13 @@ The visual design lives in a Claude Design canvas, not in this file: https://cla
 - Flatten every spine document into an ordered **block map**: headings, paragraphs, list items, table rows, images, `epub:type="pagebreak"` markers. Each block has a stable id (for example `ch05.xhtml#b0123`), its tag, class and text.
 - A **recipe candidate** is a range of blocks. It can cross file boundaries. The block map feeds selection, the LLM input, the checks, source highlighting, page numbers, image choice and the cache key.
 - Score candidate starts with cheap signals: ToC entries pointing inside a file, a heading followed by a list or by lines dense in quantities and units (½, g, ml, cup, tbsp), "Serves" or "Makes" lines, index entries pointing at the same anchors. Skip front and back matter. End each candidate at the next start.
-- If a chapter is too ambiguous, an optional cheap LLM pass returns titles and block ranges only, never the recipe text.
+- **Learn the layout profile in code first.** Find ingredient runs (consecutive ingredient-like blocks, classes may alternate), then take the block class that most often sits just before them as the book's title class, and split the book at those titles. On the reference books this found 88–96% of recipes with no LLM (see `docs/reference-books.md`, `tools/phase0/find_recipes.py`).
+- Also count title + time/yield block + numbered steps as a recipe: some recipes have no ingredient list.
+- Use in-book contents pages: links from a chapter opener to anchors are recipe starts, even when `toc.ncx` lists only chapters.
+- Variations ("Tex-Mex Fondue" under a fondue) are sub-recipes listed under their parent.
+- Main photo: the image adjacent to the recipe whose caption equals its title. Skip step-by-step photos by default.
+- Flatten `<br>` and inline spans with spaces ("Prep Time 15 minutes").
+- If a chapter is still ambiguous, an optional cheap LLM pass returns titles and block ranges only, never the recipe text.
 
 ### Parsing (LLM)
 
@@ -153,6 +160,13 @@ Both CLIs are installed on this Mac in `~/.local/bin` (Claude Code 2.1.310, Code
 
 SwiftUI `WebPage` with a custom `URLSchemeHandler` that serves XHTML, CSS and images straight from the ePub zip. JavaScript off, network loads and navigation denied, so a book can't reach the network. Needs a spike: XHTML rendering this way is unverified.
 
+### Calibre library
+
+- Read `metadata.db` (SQLite) read-only (`mode=ro`), so Calibre can stay open. Tables: `books` (title, `path`), `tags` + `books_tags_link`, `authors`, `data` (format and file name per book). Watch the file and refresh the home screen when it changes.
+- Match books with any listed tag or any title word (case-insensitive), and an `EPUB` row in `data`. Cover: `cover.jpg` in the book's folder.
+- Export to `<library>/<path>/<file name>.melarecipes`, next to the ePub. Processed = that file exists. The per-book store still lives in Application Support.
+- Never write to `metadata.db`. To check in Phase 0: Calibre's Check Library reports unknown files in book folders, and renaming a book in Calibre moves its folder, which may leave the export behind. If so, register the export as a Calibre format or use Calibre's book data files folder instead.
+
 ### Storage
 
 Per-book state lives in Application Support, keyed by book identifier and file hash: ticks, block map, parse cache (keyed by source hash, schema and prompt version, engine and model), raw engine output, check reports, my edits (stored separately so a re-parse shows a diff instead of wiping them), export history. A "Forget this book" command deletes all of it. CLIs run with `--no-session-persistence` and `--ephemeral` so they keep no transcripts.
@@ -163,7 +177,7 @@ The parser (ingest, detection, engine adapters, checks, Mela writer) lives in a 
 
 ## Out of scope
 
-Publishing or the App Store. A library of books. PDF, MOBI, Kindle. DRM books. Scanned books. Web recipes (Mela already imports those). Unit conversion and translation. Editing recipes after they're in Mela. Other export formats. iOS.
+Publishing or the App Store. Managing a book library (Calibre does that). PDF, MOBI, Kindle. DRM books. Scanned books. Web recipes (Mela already imports those). Unit conversion and translation. Editing recipes after they're in Mela. Other export formats. iOS.
 
 ## Acceptance tests
 
@@ -179,7 +193,7 @@ Publishing or the App Store. A library of books. PDF, MOBI, Kindle. DRM books. S
 ## Phases
 
 - **Phase 0, spike.** Parse about 10 recipes from each of 3 different DRM-free cookbooks with Claude, against a hand-checked answer key, with the jphastings tool (main branch) as a baseline. Test the Mela handoff with throwaway recipes. Confirm a Finder-launched build can run `claude` with its Keychain login. Try the `WebPage` source view on a real ePub.
-- **Phase 1, MVP.** Open and check a book, find recipes, Outline view with tri-state selection, title search, parse with Claude, queue, review screen, `.melarecipes` export, per-book state.
+- **Phase 1, MVP.** Calibre home screen and Library settings, open and check a book, find recipes, Outline view with tri-state selection, title search, parse with Claude, queue, review screen, `.melarecipes` export, per-book state.
 - **Phase 2.** Codex engine, inline edits, photo picker, full-text search, re-export, layout profiles, batching.
 - **Phase 3, delight.** Gallery polish, animations, Foundation Models for "is this a recipe?" checks, drag-out and Quick Look.
 
