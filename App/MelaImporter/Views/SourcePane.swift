@@ -1,10 +1,13 @@
 import SwiftUI
 import WebKit
+import AppKit
 import MelaCore
 
 /// The detail pane: the highlighted recipe's page, rendered from the book itself.
 struct SourcePane: View {
     @Bindable var book: BookModel
+    /// Text: the whole recipe drawn from its blocks. Book page: the ePub's own layout of its first file.
+    @AppStorage("detailShowsBookPage") private var showBookPage = false
 
     var body: some View {
         if let id = book.highlighted.first, let r = book.recipe(id) {
@@ -13,6 +16,13 @@ struct SourcePane: View {
                     Text([r.chapter, r.page.map { "page \($0)" }].compactMap { $0 }.joined(separator: " · "))
                         .font(.caption).foregroundStyle(.secondary)
                     Spacer()
+                    Picker("Show", selection: $showBookPage) {
+                        Text("Recipe").tag(false)
+                        Text("Book Page").tag(true)
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .fixedSize()
                     Button(book.isTicked(r.id) ? "Untick" : "Tick") { book.toggle(r.id) }
                 }
                 .padding(.horizontal, 14)
@@ -35,7 +45,12 @@ struct SourcePane: View {
                         .padding(.bottom, 8)
                     }
                 }
-                BookPageView(container: book.package.container, target: pageTarget(for: r))
+                if showBookPage {
+                    BookPageView(container: book.package.container, target: pageTarget(for: r))
+                } else {
+                    RecipeReader(book: book, recipe: r)
+                        .id(r.id)
+                }
             }
         } else {
             ContentUnavailableView("Select a recipe", systemImage: "book.pages", description: Text("Its page from the book appears here."))
@@ -149,6 +164,62 @@ struct BookPageView: NSViewRepresentable {
             case "woff2": return "font/woff2"
             default: return "application/octet-stream"
             }
+        }
+    }
+}
+
+/// The recipe as it is in the book, read straight from the ePub: every block of its range,
+/// across however many files the book split it into, with its photos. No parsing needed.
+struct RecipeReader: View {
+    let book: BookModel
+    let recipe: RecipeCandidate
+
+    var body: some View {
+        let blocks = Array(book.map.blocks[recipe.start..<min(recipe.end, book.map.blocks.count)])
+        let inlineImages = Set(blocks.flatMap(\.images))
+        ScrollView {
+            VStack(alignment: .leading, spacing: 10) {
+                // The hero photo often sits just outside the recipe's range (its own file before or after).
+                if let hero = recipe.photos.first, !inlineImages.contains(hero), let img = book.image(hero) {
+                    photo(img)
+                }
+                ForEach(blocks, id: \.index) { b in
+                    ForEach(b.images, id: \.self) { path in
+                        if let img = book.image(path) { photo(img) }
+                    }
+                    if !b.text.isEmpty { line(b) }
+                }
+            }
+            .padding(28)
+            .frame(maxWidth: 720, alignment: .leading)
+            .frame(maxWidth: .infinity)
+            .textSelection(.enabled)
+        }
+        .background(Color(red: 0.98, green: 0.97, blue: 0.95))
+    }
+
+    private func photo(_ img: NSImage) -> some View {
+        Image(nsImage: img)
+            .resizable()
+            .scaledToFit()
+            .frame(maxHeight: 360)
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder
+    private func line(_ b: Block) -> some View {
+        let ink = Color(red: 0.16, green: 0.15, blue: 0.13)
+        if b.index == recipe.start {
+            Text(b.text).font(.system(.largeTitle, design: .serif)).foregroundStyle(ink).padding(.bottom, 4)
+        } else if TextPatterns.isIngredient(b.text) {
+            Text(b.text).font(.system(.body, design: .serif)).foregroundStyle(ink).padding(.leading, 14)
+        } else if TextPatterns.isTimeOrYield(b.text) {
+            Text(b.text).font(.system(.callout, design: .serif).weight(.semibold)).foregroundStyle(ink)
+        } else if b.tag.hasPrefix("h") || (b.text.count < 40 && b.text == b.text.uppercased() && b.text.contains(where: \.isLetter)) || b.text.hasSuffix(":") {
+            Text(b.text).font(.system(.headline, design: .serif)).foregroundStyle(ink).padding(.top, 6)
+        } else {
+            Text(b.text).font(.system(.body, design: .serif)).foregroundStyle(ink).lineSpacing(3)
         }
     }
 }

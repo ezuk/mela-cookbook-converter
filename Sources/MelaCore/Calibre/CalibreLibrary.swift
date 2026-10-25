@@ -1,13 +1,17 @@
 import Foundation
 
-/// Which books in the Calibre library are cookbooks: any matching tag, or any title word.
+/// Which books in the Calibre library are cookbooks: any matching tag, or any title word,
+/// minus books excluded by hand (a "Ruby Cookbook" that isn't about food).
 public struct CookbookFilter: Codable, Sendable, Equatable {
     public var tags: [String]
     public var titleWords: [String]
+    /// Calibre book ids excluded by hand.
+    public var excludedIDs: Set<Int>
 
-    public init(tags: [String], titleWords: [String]) {
+    public init(tags: [String], titleWords: [String], excludedIDs: Set<Int> = []) {
         self.tags = tags
         self.titleWords = titleWords
+        self.excludedIDs = excludedIDs
     }
 
     public static let `default` = CookbookFilter(tags: ["cookbook", "recipes"], titleWords: ["cookbook", "recipes", "kitchen"])
@@ -95,6 +99,13 @@ public struct CalibreLibrary: Sendable {
     }
 
     public func cookbooks(matching filter: CookbookFilter) throws -> [CalibreBook] {
-        try allBooksWithEPUB().filter { filter.matches(title: $0.title, tags: $0.tags) && FileManager.default.fileExists(atPath: $0.epub.path) }
+        try allBooksWithEPUB().filter {
+            !filter.excludedIDs.contains($0.id) && filter.matches(title: $0.title, tags: $0.tags) && FileManager.default.fileExists(atPath: $0.epub.path)
+        }
+    }
+
+    /// Books excluded by hand that would otherwise be listed, so they can be brought back.
+    public func excludedBooks(_ filter: CookbookFilter) throws -> [CalibreBook] {
+        try allBooksWithEPUB().filter { filter.excludedIDs.contains($0.id) }
     }
 }

@@ -114,6 +114,11 @@ final class CalibreTests: XCTestCase {
         try Data().write(to: castIron.exportURL)
         XCTAssertTrue(castIron.processed)
         XCTAssertEqual(try library.cookbooks(matching: CookbookFilter(tags: [], titleWords: ["cast iron"])).count, 1)
+
+        // Excluded by hand: gone from the list, listed as excluded.
+        let excluding = CookbookFilter(tags: ["cookbook"], titleWords: ["kitchen"], excludedIDs: [3])
+        XCTAssertEqual(try library.cookbooks(matching: excluding).map(\.title), ["Cook It in Cast Iron"])
+        XCTAssertEqual(try library.excludedBooks(excluding).map(\.title), ["The Home Kitchen"])
     }
 
     func testBookStoreRoundTrip() throws {

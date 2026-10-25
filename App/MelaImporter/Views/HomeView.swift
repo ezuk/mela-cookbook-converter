@@ -6,6 +6,7 @@ import MelaCore
 struct HomeView: View {
     @Environment(AppModel.self) private var app
     @Environment(\.openSettings) private var openSettings
+    @Environment(\.undoManager) private var undoManager
 
     private let columns = [GridItem(.adaptive(minimum: 150, maximum: 200), spacing: 16, alignment: .top)]
 
@@ -37,6 +38,8 @@ struct HomeView: View {
                         ForEach(library.visibleBooks) { book in
                             BookCard(book: book, status: library.status(of: book)) {
                                 app.open(url: book.epub, calibreBook: book)
+                            } exclude: {
+                                library.exclude(book, undoManager: undoManager)
                             }
                         }
                     }
@@ -102,6 +105,7 @@ struct BookCard: View {
     let book: CalibreBook
     let status: BookStatus
     let open: () -> Void
+    let exclude: () -> Void
     @State private var cover: NSImage?
 
     var body: some View {
@@ -124,6 +128,9 @@ struct BookCard: View {
             if book.processed {
                 Button("Show Export in Finder") { NSWorkspace.shared.activateFileViewerSelecting([book.exportURL]) }
             }
+            Divider()
+            Button("Exclude", action: exclude)
+                .help("Remove it from this list. It stays in Calibre.")
         }
         .task(id: book.cover) {
             guard let url = book.cover else { return }

@@ -91,6 +91,21 @@ final class LibraryModel {
         watcher = source
     }
 
+    /// Removes a book from the list (it stays in Calibre). Undo from the Edit menu or Settings › Library.
+    func exclude(_ book: CalibreBook, undoManager: UndoManager?) {
+        AppSettings.shared.excludedBookIDs.insert(book.id)
+        books.removeAll { $0.id == book.id }
+        undoManager?.registerUndo(withTarget: self) { target in
+            MainActor.assumeIsolated { target.include(book.id) }
+        }
+        undoManager?.setActionName("Exclude “\(book.title)”")
+    }
+
+    func include(_ id: Int) {
+        AppSettings.shared.excludedBookIDs.remove(id)
+        reload()
+    }
+
     /// Status line for a book card.
     func status(of book: CalibreBook) -> BookStatus {
         if book.processed { return .processed }

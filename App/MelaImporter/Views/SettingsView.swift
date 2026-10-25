@@ -21,6 +21,7 @@ struct LibrarySettings: View {
     @Bindable private var settings = AppSettings.shared
     @State private var bookCount: Int?
     @State private var matchCount: Int?
+    @State private var excluded: [CalibreBook] = []
 
     var body: some View {
         Form {
@@ -43,6 +44,20 @@ struct LibrarySettings: View {
                     Text("**\(matchCount) books match** · only books with an ePub are listed").font(.callout)
                 }
             }
+            if !excluded.isEmpty {
+                Section("Excluded by hand") {
+                    ForEach(excluded) { book in
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(book.title)
+                                Text(book.authors.joined(separator: ", ")).font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Button("Include Again") { app.library.include(book.id) }
+                        }
+                    }
+                }
+            }
             Section("Exports") {
                 Toggle(isOn: $settings.saveNextToEPUB) {
                     VStack(alignment: .leading) {
@@ -54,7 +69,7 @@ struct LibrarySettings: View {
             }
         }
         .formStyle(.grouped)
-        .task(id: "\(settings.calibreLibraryPath)|\(settings.cookbookTags)|\(settings.titleWords)") { await refresh() }
+        .task(id: "\(settings.calibreLibraryPath)|\(settings.cookbookTags)|\(settings.titleWords)|\(settings.excludedBookIDs.sorted())") { await refresh() }
     }
 
     private func choose() {
@@ -68,13 +83,14 @@ struct LibrarySettings: View {
     private func refresh() async {
         let path = settings.calibreLibraryPath
         let filter = settings.filter
-        guard !path.isEmpty else { bookCount = nil; matchCount = nil; return }
-        let counts = await Task.detached { () -> (Int, Int)? in
+        guard !path.isEmpty else { bookCount = nil; matchCount = nil; excluded = []; return }
+        let counts = await Task.detached { () -> (Int, Int, [CalibreBook])? in
             guard let lib = try? CalibreLibrary(root: URL(fileURLWithPath: path)) else { return nil }
-            return (lib.bookCount, (try? lib.cookbooks(matching: filter).count) ?? 0)
+            return (lib.bookCount, (try? lib.cookbooks(matching: filter).count) ?? 0, (try? lib.excludedBooks(filter)) ?? [])
         }.value
         bookCount = counts?.0
         matchCount = counts?.1
+        excluded = counts?.2 ?? []
         app.library.reload()
     }
 }

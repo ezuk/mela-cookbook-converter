@@ -12,6 +12,8 @@ final class AppSettings {
     var calibreLibraryPath: String { didSet { defaults.set(calibreLibraryPath, forKey: "calibreLibraryPath") } }
     var cookbookTags: [String] { didSet { defaults.set(cookbookTags, forKey: "cookbookTags") } }
     var titleWords: [String] { didSet { defaults.set(titleWords, forKey: "titleWords") } }
+    /// Calibre book ids removed from the home screen by hand.
+    var excludedBookIDs: Set<Int> { didSet { defaults.set(Array(excludedBookIDs), forKey: "excludedBookIDs") } }
     var saveNextToEPUB: Bool { didSet { defaults.set(saveNextToEPUB, forKey: "saveNextToEPUB") } }
     var defaultEngine: EngineKind { didSet { defaults.set(defaultEngine.rawValue, forKey: "defaultEngine") } }
     var claudeModel: String { didSet { defaults.set(claudeModel, forKey: "claudeModel") } }
@@ -25,6 +27,7 @@ final class AppSettings {
         calibreLibraryPath = defaults.string(forKey: "calibreLibraryPath") ?? guess?.path ?? ""
         cookbookTags = defaults.stringArray(forKey: "cookbookTags") ?? CookbookFilter.default.tags
         titleWords = defaults.stringArray(forKey: "titleWords") ?? CookbookFilter.default.titleWords
+        excludedBookIDs = Set((defaults.array(forKey: "excludedBookIDs") as? [Int]) ?? [])
         saveNextToEPUB = defaults.object(forKey: "saveNextToEPUB") as? Bool ?? true
         defaultEngine = EngineKind(rawValue: defaults.string(forKey: "defaultEngine") ?? "") ?? .claude
         claudeModel = defaults.string(forKey: "claudeModel") ?? "sonnet"
@@ -34,7 +37,7 @@ final class AppSettings {
             ?? FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first?.path ?? NSHomeDirectory()
     }
 
-    var filter: CookbookFilter { CookbookFilter(tags: cookbookTags, titleWords: titleWords) }
+    var filter: CookbookFilter { CookbookFilter(tags: cookbookTags, titleWords: titleWords, excludedIDs: excludedBookIDs) }
 
     func model(for engine: EngineKind) -> String {
         engine == .claude ? claudeModel : codexModel
