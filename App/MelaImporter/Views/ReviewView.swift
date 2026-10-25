@@ -128,7 +128,7 @@ struct SourceLines: View {
                         if !b.text.isEmpty {
                             Text(b.text)
                                 .font(font(for: b))
-                                .foregroundStyle(Color(red: 0.16, green: 0.15, blue: 0.13))
+                                .foregroundStyle(Color.ink)
                                 .underline(flagged.contains(k), pattern: .dot, color: .orange)
                                 .padding(.horizontal, 4)
                                 .padding(.vertical, 1)
@@ -140,11 +140,11 @@ struct SourceLines: View {
                     }
                 }
                 .padding(24)
-                .background(Color(red: 0.98, green: 0.97, blue: 0.95))
-                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .background(Color.paper, in: RoundedRectangle(cornerRadius: 8))
+                .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(Color.paperEdge) }
                 .padding(16)
             }
-            .background(Color(nsColor: .windowBackgroundColor))
+            .background(Color.pane)
             .onChange(of: highlighted) { _, blocks in
                 if let first = blocks.min() { withAnimation { proxy.scrollTo(first, anchor: .center) } }
             }

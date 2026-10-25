@@ -152,10 +152,10 @@ struct GalleryCard: View {
                         Text(recipe.title)
                             .font(.system(.title3, design: .serif).italic())
                             .multilineTextAlignment(.center)
-                            .foregroundStyle(Color(red: 0.35, green: 0.27, blue: 0.2))
+                            .foregroundStyle(Color.eyebrow)
                             .padding(14)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .background(Color(red: 0.96, green: 0.93, blue: 0.89))
+                            .background(Color.paper)
                     }
                 }
                 .frame(height: 140)

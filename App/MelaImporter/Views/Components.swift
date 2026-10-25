@@ -5,9 +5,28 @@ import MelaCore
 extension Color {
     /// The app's accent: tomato. Controls keep the system accent; this marks content.
     static let tomato = Color(red: 0.706, green: 0.255, blue: 0.047)
-    static let approvedGreen = Color(red: 0.12, green: 0.42, blue: 0.21)
-    static let reviewAmber = Color(red: 0.48, green: 0.29, blue: 0.0)
-    static let failedRed = Color(red: 0.64, green: 0.12, blue: 0.08)
+    /// Tomato for text and small marks, lighter in Dark Mode so it stays readable.
+    static let tomatoText = Color(light: 0xB4410C, dark: 0xEC8A5E)
+    static let approvedGreen = Color(light: 0x1F6B35, dark: 0x6FCB8A)
+    static let reviewAmber = Color(light: 0x7A4A00, dark: 0xF0B85A)
+    static let failedRed = Color(light: 0xA31F14, dark: 0xFF8A7A)
+
+    /// The reading pane: a sheet of paper on a quiet gray.
+    static let pane = Color(light: 0xF5F5F7, dark: 0x1C1C1E)
+    static let paper = Color(light: 0xFBF8F2, dark: 0x27241F)
+    static let paperEdge = Color(light: 0xE8E1D3, dark: 0x3B3630)
+    static let ink = Color(light: 0x2A2620, dark: 0xEEE7DB)
+    static let inkSoft = Color(light: 0x4A4238, dark: 0xC8BFB1)
+    static let eyebrow = Color(light: 0x8A6A3D, dark: 0xCDAA78)
+
+    /// A color with its own Light and Dark Mode values, as 0xRRGGBB.
+    init(light: UInt32, dark: UInt32) {
+        self.init(nsColor: NSColor(name: nil) { appearance in
+            let hex = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? dark : light
+            return NSColor(srgbRed: CGFloat(hex >> 16 & 0xFF) / 255, green: CGFloat(hex >> 8 & 0xFF) / 255,
+                           blue: CGFloat(hex & 0xFF) / 255, alpha: 1)
+        })
+    }
 }
 
 /// A checkbox with a mixed state. The checkbox means "import this", separate from row selection.
@@ -95,6 +114,15 @@ struct BookCover: View {
     let image: NSImage?
 
     var body: some View {
+        Color.clear
+            .aspectRatio(3 / 4, contentMode: .fit)
+            .overlay { face }
+            .clipShape(UnevenRoundedRectangle(topLeadingRadius: 3, bottomLeadingRadius: 3, bottomTrailingRadius: 8, topTrailingRadius: 8))
+            .shadow(color: .black.opacity(0.18), radius: 8, y: 4)
+    }
+
+    @ViewBuilder
+    private var face: some View {
         ZStack {
             if let image {
                 Image(nsImage: image).resizable().scaledToFill()
@@ -111,9 +139,6 @@ struct BookCover: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
         }
-        .aspectRatio(3 / 4, contentMode: .fit)
-        .clipShape(UnevenRoundedRectangle(topLeadingRadius: 3, bottomLeadingRadius: 3, bottomTrailingRadius: 8, topTrailingRadius: 8))
-        .shadow(color: .black.opacity(0.18), radius: 8, y: 4)
     }
 }
 

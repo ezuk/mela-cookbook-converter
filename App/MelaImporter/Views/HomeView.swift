@@ -112,10 +112,11 @@ struct BookCard: View {
         Button(action: open) {
             VStack(alignment: .leading, spacing: 8) {
                 BookCover(title: book.title, author: book.authors.first ?? "", image: cover)
-                Text(book.title)
+                Text(MelaExporter.displayBookTitle(book.title))
                     .font(.headline)
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
+                    .help(book.title)
                 Badge(text: status.label, tint: tint)
             }
             .padding(8)
